@@ -47,10 +47,10 @@ class PerfilAdmin(admin.ModelAdmin):
 
 @admin.register(Mesa)
 class MesaAdmin(admin.ModelAdmin):
-    list_display = ['numero', 'capacidad', 'estado']
-    list_filter = ['estado']
+    list_display = ['numero', 'capacidad']
     search_fields = ['numero']
     ordering = ['numero']
+    fields = ['numero', 'capacidad']  # Solo número y capacidad
 
 @admin.register(Reserva)
 class ReservaAdmin(admin.ModelAdmin):

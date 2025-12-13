@@ -143,6 +143,22 @@ class Reserva(models.Model):
             raise ValidationError({
                 'num_personas': f'El número de personas ({self.num_personas}) excede la capacidad de la mesa ({self.mesa.capacidad}).'
             })
+        
+        # Validar que no haya otra reserva activa en la misma mesa y horario
+        if self.mesa and self.fecha_reserva and self.hora_inicio and self.hora_fin:
+            # Buscar reservas que se solapen en tiempo
+            reservas_existentes = Reserva.objects.filter(
+                mesa=self.mesa,
+                fecha_reserva=self.fecha_reserva,
+                estado__in=['pendiente', 'confirmada']  # Solo considerar reservas activas
+            ).exclude(pk=self.pk)  # Excluir la reserva actual si estamos editando
+            
+            for reserva in reservas_existentes:
+                # Verificar si hay solapamiento de horarios
+                if (self.hora_inicio < reserva.hora_fin and self.hora_fin > reserva.hora_inicio):
+                    raise ValidationError({
+                        'mesa': f'La mesa {self.mesa.numero} ya está reservada de {reserva.hora_inicio.strftime("%H:%M")} a {reserva.hora_fin.strftime("%H:%M")} en esta fecha.'
+                    })
     
     def __str__(self):
         return f"Reserva {self.id} - {self.cliente.username} - Mesa {self.mesa.numero} ({self.fecha_reserva})"

@@ -37,11 +37,10 @@ class IngredienteForm(forms.ModelForm):
 class MesaForm(forms.ModelForm):
     class Meta:
         model = Mesa
-        fields = ['numero', 'capacidad', 'estado']
+        fields = ['numero', 'capacidad']  # Eliminado 'estado'
         widgets = {
             'numero': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
             'capacidad': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
-            'estado': forms.Select(attrs={'class': 'form-select'}),
         }
 
 

@@ -772,22 +772,30 @@ def cliente_reservar(request):
         hora_inicio_obj = datetime.strptime(hora_inicio, '%H:%M').time()
         hora_fin_obj = (datetime.combine(date.today(), hora_inicio_obj) + timedelta(hours=2)).time()
         
-        reserva = Reserva.objects.create(
-            cliente=request.user,
-            mesa=mesa,
-            fecha_reserva=fecha_reserva,
-            hora_inicio=hora_inicio_obj,
-            hora_fin=hora_fin_obj,
-            num_personas=num_personas,
-            notas=notas,
-            estado='pendiente'
-        )
-        
-        messages.success(request, f'¡Reserva creada exitosamente! Tu reserva es la #{reserva.id}')
-        return redirect('cliente_mis_reservas')
+        try:
+            reserva = Reserva(
+                cliente=request.user,
+                mesa=mesa,
+                fecha_reserva=fecha_reserva,
+                hora_inicio=hora_inicio_obj,
+                hora_fin=hora_fin_obj,
+                num_personas=num_personas,
+                notas=notas,
+                estado='pendiente'
+            )
+            reserva.full_clean()  # Ejecutar validaciones del modelo
+            reserva.save()
+            
+            messages.success(request, f'¡Reserva creada exitosamente! Tu reserva es la #{reserva.id}')
+            return redirect('cliente_mis_reservas')
+        except ValidationError as e:
+            # Mostrar errores de validación
+            for field, errors in e.message_dict.items():
+                for error in errors:
+                    messages.error(request, error)
     
     # GET - Mostrar formulario
-    mesas = Mesa.objects.filter(estado='disponible').order_by('numero')
+    mesas = Mesa.objects.all().order_by('numero')  # Mostrar todas las mesas
     
     # Generar horarios disponibles (12:00 - 21:00, cada 30 min)
     horarios = []

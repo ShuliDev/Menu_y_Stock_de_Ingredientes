@@ -18,7 +18,6 @@
                     <tr>
                         <th>Número</th>
                         <th>Capacidad</th>
-                        <th>Estado</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -27,15 +26,6 @@
                     <tr>
                         <td><strong>Mesa {{ mesa.numero }}</strong></td>
                         <td>{{ mesa.capacidad }} personas</td>
-                        <td>
-                            {% if mesa.estado == 'disponible' %}
-                                <span class="badge bg-success">{{ mesa.get_estado_display }}</span>
-                            {% elif mesa.estado == 'ocupada' %}
-                                <span class="badge bg-danger">{{ mesa.get_estado_display }}</span>
-                            {% else %}
-                                <span class="badge bg-warning">{{ mesa.get_estado_display }}</span>
-                            {% endif %}
-                        </td>
                         <td class="table-actions">
                             <a href="{% url 'mesa_update' mesa.pk %}" class="btn btn-sm btn-warning">Editar</a>
                             <form method="post" action="{% url 'mesa_delete' mesa.pk %}" style="display:inline;">
@@ -46,7 +36,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="4" class="text-center text-muted">No hay mesas registradas</td>
+                        <td colspan="3" class="text-center text-muted">No hay mesas registradas</td>
                     </tr>
                     {% endfor %}
                 </tbody>
