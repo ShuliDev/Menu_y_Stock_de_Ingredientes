@@ -1,0 +1,64 @@
+{% extends 'mainApp/cliente_base.html' %}
+
+{% block title %}Mis Reservas{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h2 class="mb-4">Mis Reservas</h2>
+
+    {% if reservas %}
+    <div class="row">
+        {% for reserva in reservas %}
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header 
+                    {% if reserva.estado == 'pendiente' %}bg-warning{% elif reserva.estado == 'confirmada' %}bg-success text-white{% else %}bg-secondary text-white{% endif %}">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span><strong>Reserva #{{ reserva.id }}</strong></span>
+                        <span class="badge bg-light text-dark">{{ reserva.get_estado_display }}</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2">
+                        <strong>📅 Fecha:</strong> {{ reserva.fecha_reserva|date:"d/m/Y" }}
+                    </p>
+                    <p class="mb-2">
+                        <strong>🕐 Hora:</strong> {{ reserva.hora_inicio|time:"H:i" }} - {{ reserva.hora_fin|time:"H:i" }}
+                    </p>
+                    <p class="mb-2">
+                        <strong>🪑 Mesa:</strong> Mesa {{ reserva.mesa.numero }}
+                    </p>
+                    <p class="mb-2">
+                        <strong>👥 Personas:</strong> {{ reserva.num_personas }}
+                    </p>
+                    {% if reserva.notas %}
+                    <p class="mb-2">
+                        <strong>📝 Notas:</strong> {{ reserva.notas }}
+                    </p>
+                    {% endif %}
+                    <hr>
+                    <small class="text-muted">Creada: {{ reserva.created_at|date:"d/m/Y H:i" }}</small>
+                    
+                    {% if reserva.estado != 'cancelada' %}
+                    <form method="post" action="{% url 'cliente_cancelar_reserva' reserva.pk %}" class="mt-3">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger btn-sm w-100" 
+                                onclick="return confirm('¿Está seguro de cancelar esta reserva?')">
+                            Cancelar Reserva
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <h5>No tienes reservas</h5>
+        <p class="mb-0">¡Haz tu primera reserva y disfruta de nuestros deliciosos platos!</p>
+        <a href="{% url 'cliente_reservar' %}" class="btn btn-primary mt-3">Hacer una Reserva</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

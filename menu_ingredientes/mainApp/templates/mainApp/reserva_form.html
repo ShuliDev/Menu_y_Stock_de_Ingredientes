@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <h4>{{ title }}</h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Cliente *</label>
+                        {{ form.cliente }}
+                        {% if form.cliente.errors %}
+                            <div class="text-danger">{{ form.cliente.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Mesa *</label>
+                        {{ form.mesa }}
+                        {% if form.mesa.errors %}
+                            <div class="text-danger">{{ form.mesa.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Fecha de Reserva *</label>
+                                {{ form.fecha_reserva }}
+                                {% if form.fecha_reserva.errors %}
+                                    <div class="text-danger">{{ form.fecha_reserva.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Número de Personas *</label>
+                                {{ form.num_personas }}
+                                {% if form.num_personas.errors %}
+                                    <div class="text-danger">{{ form.num_personas.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Hora de Inicio *</label>
+                                {{ form.hora_inicio }}
+                                {% if form.hora_inicio.errors %}
+                                    <div class="text-danger">{{ form.hora_inicio.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Estado *</label>
+                                {{ form.estado }}
+                                {% if form.estado.errors %}
+                                    <div class="text-danger">{{ form.estado.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Notas</label>
+                        {{ form.notas }}
+                        {% if form.notas.errors %}
+                            <div class="text-danger">{{ form.notas.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'reserva_list' %}" class="btn btn-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

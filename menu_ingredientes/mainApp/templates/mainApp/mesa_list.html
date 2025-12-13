@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col">
+        <h2>Gestión de Mesas</h2>
+    </div>
+    <div class="col text-end">
+        <a href="{% url 'mesa_create' %}" class="btn btn-primary">+ Nueva Mesa</a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Número</th>
+                        <th>Capacidad</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mesa in mesas %}
+                    <tr>
+                        <td><strong>Mesa {{ mesa.numero }}</strong></td>
+                        <td>{{ mesa.capacidad }} personas</td>
+                        <td>
+                            {% if mesa.estado == 'disponible' %}
+                                <span class="badge bg-success">{{ mesa.get_estado_display }}</span>
+                            {% elif mesa.estado == 'ocupada' %}
+                                <span class="badge bg-danger">{{ mesa.get_estado_display }}</span>
+                            {% else %}
+                                <span class="badge bg-warning">{{ mesa.get_estado_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="table-actions">
+                            <a href="{% url 'mesa_update' mesa.pk %}" class="btn btn-sm btn-warning">Editar</a>
+                            <form method="post" action="{% url 'mesa_delete' mesa.pk %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar esta mesa?')">Eliminar</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center text-muted">No hay mesas registradas</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

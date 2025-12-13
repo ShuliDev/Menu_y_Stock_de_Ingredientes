@@ -1,0 +1,71 @@
+{% extends 'mainApp/cliente_base.html' %}
+
+{% block title %}Registro{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Crear Cuenta</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Correo Electrónico *</label>
+                            <input type="email" name="email" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Nombre de Usuario *</label>
+                            <input type="text" name="username" class="form-control" required>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Nombre *</label>
+                                    <input type="text" name="nombre" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Apellido *</label>
+                                    <input type="text" name="apellido" class="form-control" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Teléfono *</label>
+                            <input type="tel" name="telefono" class="form-control" 
+                                   placeholder="+56912345678" required>
+                            <small class="text-muted">Formato: +56912345678</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Contraseña *</label>
+                            <input type="password" name="password" class="form-control" required minlength="8">
+                            <small class="text-muted">Mínimo 8 caracteres</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Confirmar Contraseña *</label>
+                            <input type="password" name="password_confirm" class="form-control" required>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 py-2">Registrarse</button>
+                    </form>
+
+                    <div class="text-center mt-3">
+                        <small>¿Ya tienes cuenta? <a href="{% url 'login' %}">Inicia sesión aquí</a></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

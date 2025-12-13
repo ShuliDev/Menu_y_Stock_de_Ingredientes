@@ -4,12 +4,32 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db import transaction
 from django.core.exceptions import ValidationError
-from .models import CategoriaMenu, Ingrediente, Plato, Receta, Stock, ReservaStock
+from .models import CategoriaMenu, Ingrediente, Plato, Receta, Stock, ReservaStock, Mesa, Reserva
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.forms import inlineformset_factory
-from .forms import PlatoForm, StockForm, CategoriaForm, IngredienteForm, RecetaInlineForm
-from .models import CategoriaMenu, Ingrediente, Plato, Receta, Stock, ReservaStock
+from .forms import PlatoForm, StockForm, CategoriaForm, IngredienteForm, RecetaInlineForm, MesaForm, ReservaForm
+from datetime import timedelta
+from django.utils import timezone
+from django.contrib.auth.decorators import login_required, user_passes_test
+from functools import wraps
+
+# Decorador personalizado para verificar que el usuario sea administrador
+def admin_required(view_func):
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('login')
+        # Permitir acceso a superusers y staff
+        if request.user.is_superuser or request.user.is_staff:
+            return view_func(request, *args, **kwargs)
+        # Verificar si tiene perfil de admin
+        if hasattr(request.user, 'perfil') and request.user.perfil.rol == 'admin':
+            return view_func(request, *args, **kwargs)
+        # Si no es admin, redirigir al menú de cliente
+        messages.error(request, 'No tienes permisos para acceder a esta página')
+        return redirect('cliente_menu')
+    return wrapper
 
 # SERIALIZERS (Simples, sin DRF)
 class PlatoSerializer:
@@ -344,11 +364,12 @@ class StockViewSet(viewsets.ViewSet):
 
 
 # -------------------- VISTAS WEB (interfaz tradicional) --------------------
+@admin_required
 def plato_list(request):
     platos = Plato.objects.filter(activo=True).select_related('categoria')
     return render(request, 'mainApp/plato_list.html', {'platos': platos})
 
-
+@admin_required
 def plato_create(request):
     RecetaFormSet = inlineformset_factory(Plato, Receta, form=RecetaInlineForm, extra=1, can_delete=True)
     if request.method == 'POST':
@@ -371,6 +392,7 @@ def plato_create(request):
     return render(request, 'mainApp/plato_form.html', {'form': form, 'formset': formset, 'title': 'Nuevo Plato'})
 
 
+@admin_required
 def plato_update(request, pk):
     plato = get_object_or_404(Plato, pk=pk)
     RecetaFormSet = inlineformset_factory(Plato, Receta, form=RecetaInlineForm, extra=1, can_delete=True)
@@ -388,6 +410,7 @@ def plato_update(request, pk):
     return render(request, 'mainApp/plato_form.html', {'form': form, 'formset': formset, 'title': 'Editar Plato'})
 
 
+@admin_required
 def plato_delete(request, pk):
     plato = get_object_or_404(Plato, pk=pk)
     plato.activo = False
@@ -396,11 +419,13 @@ def plato_delete(request, pk):
     return redirect('plato_list')
 
 
+@admin_required
 def stock_list(request):
     stocks = Stock.objects.select_related('ingrediente').all()
     return render(request, 'mainApp/stock_list.html', {'stocks': stocks})
 
 
+@admin_required
 def stock_update(request, pk):
     stock = get_object_or_404(Stock, pk=pk)
     if request.method == 'POST':
@@ -414,6 +439,7 @@ def stock_update(request, pk):
     return render(request, 'mainApp/stock_form.html', {'form': form, 'title': 'Editar Stock'})
 
 
+@admin_required
 def stock_create(request):
     if request.method == 'POST':
         form = StockForm(request.POST)
@@ -426,6 +452,7 @@ def stock_create(request):
     return render(request, 'mainApp/stock_form.html', {'form': form, 'title': 'Nuevo Stock'})
 
 
+@admin_required
 def simular_pedido(request):
     mensaje = None
     if request.method == 'POST':
@@ -445,11 +472,13 @@ def simular_pedido(request):
 
 
 # -------------------- VISTAS CATEGORÍAS --------------------
+@admin_required
 def categoria_list(request):
     categorias = CategoriaMenu.objects.all()
     return render(request, 'mainApp/categoria_list.html', {'categorias': categorias})
 
 
+@admin_required
 def categoria_create(request):
     if request.method == 'POST':
         form = CategoriaForm(request.POST)
@@ -462,6 +491,7 @@ def categoria_create(request):
     return render(request, 'mainApp/categoria_form.html', {'form': form, 'title': 'Nueva Categoría'})
 
 
+@admin_required
 def categoria_update(request, pk):
     categoria = get_object_or_404(CategoriaMenu, pk=pk)
     if request.method == 'POST':
@@ -475,6 +505,7 @@ def categoria_update(request, pk):
     return render(request, 'mainApp/categoria_form.html', {'form': form, 'title': 'Editar Categoría'})
 
 
+@admin_required
 def categoria_delete(request, pk):
     categoria = get_object_or_404(CategoriaMenu, pk=pk)
     categoria.delete()
@@ -482,11 +513,13 @@ def categoria_delete(request, pk):
     return redirect('categoria_list')
 
 
+@admin_required
 def ingrediente_list(request):
     ingredientes = Ingrediente.objects.all()
     return render(request, 'mainApp/ingrediente_list.html', {'ingredientes': ingredientes})
 
 
+@admin_required
 def ingrediente_create(request):
     if request.method == 'POST':
         form = IngredienteForm(request.POST)
@@ -499,6 +532,7 @@ def ingrediente_create(request):
     return render(request, 'mainApp/ingrediente_form.html', {'form': form, 'title': 'Nuevo Ingrediente'})
 
 
+@admin_required
 def ingrediente_update(request, pk):
     ingrediente = get_object_or_404(Ingrediente, pk=pk)
     if request.method == 'POST':
@@ -512,8 +546,283 @@ def ingrediente_update(request, pk):
     return render(request, 'mainApp/ingrediente_form.html', {'form': form, 'title': 'Editar Ingrediente'})
 
 
+@admin_required
 def ingrediente_delete(request, pk):
     ingrediente = get_object_or_404(Ingrediente, pk=pk)
     ingrediente.delete()
     messages.success(request, 'Ingrediente eliminado')
     return redirect('ingrediente_list')
+
+
+# ==================== MÓDULO 2: VISTAS WEB - MESAS ====================
+
+@admin_required
+def mesa_list(request):
+    mesas = Mesa.objects.all().order_by('numero')
+    return render(request, 'mainApp/mesa_list.html', {'mesas': mesas})
+
+
+@admin_required
+def mesa_create(request):
+    if request.method == 'POST':
+        form = MesaForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Mesa creada exitosamente')
+            return redirect('mesa_list')
+    else:
+        form = MesaForm()
+    return render(request, 'mainApp/mesa_form.html', {'form': form, 'title': 'Nueva Mesa'})
+
+
+@admin_required
+def mesa_update(request, pk):
+    mesa = get_object_or_404(Mesa, pk=pk)
+    if request.method == 'POST':
+        form = MesaForm(request.POST, instance=mesa)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Mesa actualizada exitosamente')
+            return redirect('mesa_list')
+    else:
+        form = MesaForm(instance=mesa)
+    return render(request, 'mainApp/mesa_form.html', {'form': form, 'title': 'Editar Mesa'})
+
+
+@admin_required
+def mesa_delete(request, pk):
+    mesa = get_object_or_404(Mesa, pk=pk)
+    if request.method == 'POST':
+        mesa.delete()
+        messages.success(request, 'Mesa eliminada exitosamente')
+    return redirect('mesa_list')
+
+
+# ==================== MÓDULO 2: VISTAS WEB - RESERVAS (ADMIN) ====================
+
+@admin_required
+@admin_required
+def reserva_list(request):
+    reservas = Reserva.objects.all().select_related('cliente__perfil', 'mesa')
+    
+    # Filtros
+    estado = request.GET.get('estado')
+    fecha = request.GET.get('fecha')
+    
+    if estado:
+        reservas = reservas.filter(estado=estado)
+    if fecha:
+        reservas = reservas.filter(fecha_reserva=fecha)
+    
+    reservas = reservas.order_by('-created_at')
+    
+    return render(request, 'mainApp/reserva_list.html', {'reservas': reservas})
+
+
+@admin_required
+def reserva_create(request):
+    if request.method == 'POST':
+        form = ReservaForm(request.POST)
+        if form.is_valid():
+            reserva = form.save(commit=False)
+            # Calcular hora_fin (2 horas después)
+            hora_inicio = form.cleaned_data['hora_inicio']
+            reserva.hora_fin = (timezone.datetime.combine(timezone.datetime.today(), hora_inicio) + timedelta(hours=2)).time()
+            reserva.save()
+            messages.success(request, 'Reserva creada exitosamente')
+            return redirect('reserva_list')
+    else:
+        form = ReservaForm()
+    return render(request, 'mainApp/reserva_form.html', {'form': form, 'title': 'Nueva Reserva'})
+
+
+@admin_required
+def reserva_update(request, pk):
+    reserva = get_object_or_404(Reserva, pk=pk)
+    if request.method == 'POST':
+        form = ReservaForm(request.POST, instance=reserva)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Reserva actualizada exitosamente')
+            return redirect('reserva_list')
+    else:
+        form = ReservaForm(instance=reserva)
+    return render(request, 'mainApp/reserva_form.html', {'form': form, 'title': 'Editar Reserva'})
+
+
+@admin_required
+def reserva_cancelar(request, pk):
+    reserva = get_object_or_404(Reserva, pk=pk)
+    if request.method == 'POST':
+        reserva.estado = 'cancelada'
+        reserva.save()
+        messages.success(request, 'Reserva cancelada exitosamente')
+    return redirect('reserva_list')
+
+
+# ==================== MÓDULO 2: VISTAS WEB - CLIENTES ====================
+
+def custom_login_redirect(request):
+    """Redirige según el rol del usuario después del login"""
+    if request.user.is_authenticated:
+        # Superusers siempre van al panel de admin
+        if request.user.is_superuser or request.user.is_staff:
+            return redirect('admin_dashboard')
+        # Usuarios con perfil de admin
+        if hasattr(request.user, 'perfil'):
+            if request.user.perfil.rol == 'admin':
+                return redirect('admin_dashboard')
+        # Usuarios cliente o sin perfil van al menú
+        return redirect('cliente_menu')
+    return redirect('login')
+
+
+def cliente_menu(request):
+    """Vista pública del menú para clientes"""
+    platos = Plato.objects.filter(activo=True).select_related('categoria')
+    categorias = CategoriaMenu.objects.all()
+    
+    # Filtro por categoría
+    categoria_filtro = request.GET.get('categoria')
+    if categoria_filtro:
+        platos = platos.filter(categoria_id=categoria_filtro)
+    
+    return render(request, 'mainApp/cliente_menu.html', {
+        'platos': platos,
+        'categorias': categorias,
+        'categoria_filtro': categoria_filtro
+    })
+
+
+def cliente_register(request):
+    """Registro de nuevos clientes"""
+    if request.method == 'POST':
+        from django.contrib.auth.models import User
+        
+        email = request.POST.get('email')
+        username = request.POST.get('username')
+        nombre = request.POST.get('nombre')
+        apellido = request.POST.get('apellido')
+        telefono = request.POST.get('telefono')
+        password = request.POST.get('password')
+        password_confirm = request.POST.get('password_confirm')
+        
+        # Validaciones básicas
+        if User.objects.filter(username=username).exists():
+            messages.error(request, 'El nombre de usuario ya está en uso')
+            return render(request, 'mainApp/cliente_register.html')
+        
+        if User.objects.filter(email=email).exists():
+            messages.error(request, 'El correo electrónico ya está registrado')
+            return render(request, 'mainApp/cliente_register.html')
+        
+        if password != password_confirm:
+            messages.error(request, 'Las contraseñas no coinciden')
+            return render(request, 'mainApp/cliente_register.html')
+        
+        # Crear usuario y perfil
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password
+        )
+        
+        from .models import Perfil
+        Perfil.objects.create(
+            user=user,
+            rol='cliente',  # Siempre crea clientes
+            nombre_completo=f"{nombre} {apellido}",
+            telefono=telefono
+        )
+        
+        messages.success(request, 'Cuenta de cliente creada exitosamente. Ya puedes iniciar sesión.')
+        return redirect('login')
+    
+    return render(request, 'mainApp/cliente_register.html')
+
+
+def cliente_reservar(request):
+    """Vista para que clientes hagan reservas"""
+    from datetime import date, time
+    
+    if not request.user.is_authenticated:
+        messages.warning(request, 'Debes iniciar sesión para hacer una reserva')
+        return redirect('login')
+    
+    if request.method == 'POST':
+        fecha_reserva = request.POST.get('fecha_reserva')
+        hora_inicio = request.POST.get('hora_inicio')
+        mesa_id = request.POST.get('mesa')
+        num_personas = request.POST.get('num_personas')
+        notas = request.POST.get('notas', '')
+        
+        # Validaciones básicas
+        mesa = get_object_or_404(Mesa, pk=mesa_id)
+        
+        # Crear reserva
+        from datetime import datetime
+        hora_inicio_obj = datetime.strptime(hora_inicio, '%H:%M').time()
+        hora_fin_obj = (datetime.combine(date.today(), hora_inicio_obj) + timedelta(hours=2)).time()
+        
+        reserva = Reserva.objects.create(
+            cliente=request.user,
+            mesa=mesa,
+            fecha_reserva=fecha_reserva,
+            hora_inicio=hora_inicio_obj,
+            hora_fin=hora_fin_obj,
+            num_personas=num_personas,
+            notas=notas,
+            estado='pendiente'
+        )
+        
+        messages.success(request, f'¡Reserva creada exitosamente! Tu reserva es la #{reserva.id}')
+        return redirect('cliente_mis_reservas')
+    
+    # GET - Mostrar formulario
+    mesas = Mesa.objects.filter(estado='disponible').order_by('numero')
+    
+    # Generar horarios disponibles (12:00 - 21:00, cada 30 min)
+    horarios = []
+    for h in range(12, 21):
+        horarios.append(f"{h:02d}:00")
+        horarios.append(f"{h:02d}:30")
+    
+    from datetime import date
+    fecha_min = date.today().isoformat()
+    
+    return render(request, 'mainApp/cliente_reservar.html', {
+        'mesas': mesas,
+        'horarios': horarios,
+        'fecha_min': fecha_min
+    })
+
+
+def cliente_mis_reservas(request):
+    """Ver reservas del cliente autenticado"""
+    if not request.user.is_authenticated:
+        messages.warning(request, 'Debes iniciar sesión')
+        return redirect('login')
+    
+    reservas = Reserva.objects.filter(cliente=request.user).select_related('mesa').order_by('-created_at')
+    
+    return render(request, 'mainApp/cliente_mis_reservas.html', {
+        'reservas': reservas
+    })
+
+
+def cliente_cancelar_reserva(request, pk):
+    """Cancelar una reserva del cliente"""
+    if not request.user.is_authenticated:
+        return redirect('login')
+    
+    reserva = get_object_or_404(Reserva, pk=pk, cliente=request.user)
+    
+    if request.method == 'POST':
+        if reserva.estado == 'cancelada':
+            messages.warning(request, 'Esta reserva ya está cancelada')
+        else:
+            reserva.estado = 'cancelada'
+            reserva.save()
+            messages.success(request, 'Reserva cancelada exitosamente')
+    
+    return redirect('cliente_mis_reservas')

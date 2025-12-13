@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col">
+        <h2>Gestión de Reservas</h2>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Estado</label>
+                <select name="estado" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="pendiente" {% if request.GET.estado == 'pendiente' %}selected{% endif %}>Pendiente</option>
+                    <option value="confirmada" {% if request.GET.estado == 'confirmada' %}selected{% endif %}>Confirmada</option>
+                    <option value="cancelada" {% if request.GET.estado == 'cancelada' %}selected{% endif %}>Cancelada</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Fecha</label>
+                <input type="date" name="fecha" class="form-control" value="{{ request.GET.fecha }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <button type="submit" class="btn btn-primary d-block w-100">Filtrar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Cliente</th>
+                        <th>Mesa</th>
+                        <th>Fecha</th>
+                        <th>Hora</th>
+                        <th>Personas</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reserva in reservas %}
+                    <tr>
+                        <td>#{{ reserva.id }}</td>
+                        <td>
+                            {{ reserva.cliente.perfil.nombre_completo }}<br>
+                            <small class="text-muted">{{ reserva.cliente.email }}</small>
+                        </td>
+                        <td>Mesa {{ reserva.mesa.numero }}</td>
+                        <td>{{ reserva.fecha_reserva|date:"d/m/Y" }}</td>
+                        <td>{{ reserva.hora_inicio|time:"H:i" }} - {{ reserva.hora_fin|time:"H:i" }}</td>
+                        <td>{{ reserva.num_personas }}</td>
+                        <td>
+                            {% if reserva.estado == 'pendiente' %}
+                                <span class="badge bg-warning">{{ reserva.get_estado_display }}</span>
+                            {% elif reserva.estado == 'confirmada' %}
+                                <span class="badge bg-success">{{ reserva.get_estado_display }}</span>
+                            {% else %}
+                                <span class="badge bg-danger">{{ reserva.get_estado_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="table-actions">
+                            <a href="{% url 'reserva_update' reserva.pk %}" class="btn btn-sm btn-warning">Editar</a>
+                            {% if reserva.estado != 'cancelada' %}
+                            <form method="post" action="{% url 'reserva_cancelar' reserva.pk %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Cancelar esta reserva?')">Cancelar</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted">No hay reservas registradas</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
