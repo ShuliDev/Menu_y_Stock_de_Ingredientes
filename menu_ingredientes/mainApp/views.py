@@ -677,6 +677,14 @@ def custom_login_redirect(request):
     return redirect('login')
 
 
+def custom_logout(request):
+    """Logout personalizado que acepta GET y POST"""
+    from django.contrib.auth import logout
+    logout(request)
+    messages.success(request, 'Has cerrado sesión exitosamente')
+    return redirect('cliente_menu')
+
+
 def cliente_menu(request):
     """Vista pública del menú para clientes"""
     platos = Plato.objects.filter(activo=True).select_related('categoria')
