@@ -1,5 +1,6 @@
 from rest_framework.routers import DefaultRouter
 from django.urls import path
+from . import views_api
 from .views import PlatoViewSet, IngredienteViewSet, StockViewSet
 from .views_modulo2 import (
     MesaViewSet, ReservaViewSet,
@@ -9,14 +10,17 @@ from .views_modulo2 import (
 
 # Router para ViewSets
 router = DefaultRouter()
-# Módulo 1: Menú y Stock
-router.register(r'platos', PlatoViewSet, basename='plato')
-router.register(r'ingredientes', IngredienteViewSet, basename='ingrediente')
-router.register(r'stock', StockViewSet, basename='stock')
+# Registrar ViewSets
+router.register(r'categorias', views_api.CategoriaMenuViewSet)
+router.register(r'ingredientes', views_api.IngredienteViewSet)
+router.register(r'platos', views_api.PlatoViewSet)
+router.register(r'stock', views_api.StockViewSet)
 
-# Módulo 2: Mesas y Reservas
-router.register(r'mesas', MesaViewSet, basename='mesa')
-router.register(r'reservas', ReservaViewSet, basename='reserva')
+# URLs adicionales
+urlpatterns = [
+    path('dashboard/', views_api.DashboardAPIView.as_view(), name='dashboard'),
+    path('validar-stock/', views_api.ValidarStockAPIView.as_view(), name='validar-stock'),
+]
 
 # URLs adicionales del Módulo 2
 urlpatterns = [
