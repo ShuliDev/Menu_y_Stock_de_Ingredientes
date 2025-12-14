@@ -4,6 +4,134 @@ from .models import Perfil, Mesa, Reserva
 from datetime import date, time
 import re
 
+# ==================== MÓDULO 1: SERIALIZERS DE MENÚ Y STOCK ====================
+
+class CategoriaMenuSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CategoriaMenu
+        fields = ['id', 'nombre', 'descripcion']
+
+
+class IngredienteSerializer(serializers.ModelSerializer):
+    stock_actual = serializers.DecimalField(
+        source='stock.cantidad_disponible', 
+        max_digits=10, 
+        decimal_places=2,
+        read_only=True
+    )
+    bajo_stock = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Ingrediente
+        fields = ['id', 'nombre', 'unidad_medida', 'stock_minimo', 'stock_actual', 'bajo_stock']
+    
+    def get_bajo_stock(self, obj):
+        if hasattr(obj, 'stock'):
+            return obj.stock.cantidad_disponible <= obj.stock_minimo
+        return False
+
+
+class RecetaSerializer(serializers.ModelSerializer):
+    ingrediente_nombre = serializers.CharField(source='ingrediente.nombre', read_only=True)
+    ingrediente_unidad = serializers.CharField(source='ingrediente.unidad_medida', read_only=True)
+    
+    class Meta:
+        model = Receta
+        fields = ['id', 'ingrediente', 'ingrediente_nombre', 'ingrediente_unidad', 'cantidad']
+    
+    def validate_cantidad(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("La cantidad debe ser mayor a 0")
+        return value
+
+
+class PlatoSerializer(serializers.ModelSerializer):
+    categoria_nombre = serializers.CharField(source='categoria.nombre', read_only=True)
+    recetas = RecetaSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = Plato
+        fields = [
+            'id', 'nombre', 'descripcion', 'precio', 
+            'categoria', 'categoria_nombre', 'activo', 'recetas'
+        ]
+    
+    def validate_precio(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("El precio debe ser mayor a 0")
+        return value
+
+
+class PlatoCreateUpdateSerializer(serializers.ModelSerializer):
+    recetas = RecetaSerializer(many=True, required=False)
+    
+    class Meta:
+        model = Plato
+        fields = ['id', 'nombre', 'descripcion', 'precio', 'categoria', 'activo', 'recetas']
+    
+    def create(self, validated_data):
+        recetas_data = validated_data.pop('recetas', [])
+        plato = Plato.objects.create(**validated_data)
+        
+        for receta_data in recetas_data:
+            Receta.objects.create(plato=plato, **receta_data)
+        
+        return plato
+    
+    def update(self, instance, validated_data):
+        recetas_data = validated_data.pop('recetas', None)
+        
+        # Actualizar campos del plato
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        
+        # Actualizar recetas si se proporcionan
+        if recetas_data is not None:
+            # Eliminar recetas existentes
+            instance.recetas.all().delete()
+            # Crear nuevas recetas
+            for receta_data in recetas_data:
+                Receta.objects.create(plato=instance, **receta_data)
+        
+        return instance
+
+
+class StockSerializer(serializers.ModelSerializer):
+    ingrediente_nombre = serializers.CharField(source='ingrediente.nombre', read_only=True)
+    ingrediente_unidad = serializers.CharField(source='ingrediente.unidad_medida', read_only=True)
+    stock_minimo = serializers.IntegerField(source='ingrediente.stock_minimo', read_only=True)
+    bajo_stock = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Stock
+        fields = [
+            'id', 'ingrediente', 'ingrediente_nombre', 'ingrediente_unidad',
+            'cantidad_disponible', 'stock_minimo', 'bajo_stock'
+        ]
+    
+    def get_bajo_stock(self, obj):
+        return obj.cantidad_disponible <= obj.ingrediente.stock_minimo
+
+
+class StockUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Stock
+        fields = ['cantidad_disponible']
+    
+    def validate_cantidad_disponible(self, value):
+        if value < 0:
+            raise serializers.ValidationError("La cantidad no puede ser negativa")
+        return value
+
+
+class ReservaStockSerializer(serializers.ModelSerializer):
+    plato_nombre = serializers.CharField(source='plato.nombre', read_only=True)
+    
+    class Meta:
+        model = ReservaStock
+        fields = ['id', 'plato', 'plato_nombre', 'cantidad', 'estado', 'fecha_creacion', 'pedido_id']
+
 
 # ==================== MÓDULO 2: SERIALIZERS DE AUTENTICACIÓN ====================
 
