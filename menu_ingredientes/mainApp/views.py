@@ -452,25 +452,6 @@ def stock_create(request):
     return render(request, 'mainApp/stock_form.html', {'form': form, 'title': 'Nuevo Stock'})
 
 
-@admin_required
-def simular_pedido(request):
-    mensaje = None
-    if request.method == 'POST':
-        plato_id = request.POST.get('plato_id')
-        cantidad = request.POST.get('cantidad')
-        pedido_id = request.POST.get('pedido_id')
-        try:
-            cantidad = int(cantidad)
-            stock_service = StockService()
-            reserva = stock_service.validar_y_reservar_stock(plato_id, cantidad, pedido_id)
-            mensaje = f"Reserva creada: {reserva.id}"
-        except Exception as e:
-            mensaje = str(e)
-
-    platos = Plato.objects.filter(activo=True)
-    return render(request, 'mainApp/simular_pedido.html', {'platos': platos, 'mensaje': mensaje})
-
-
 # -------------------- VISTAS CATEGORÍAS --------------------
 @admin_required
 def categoria_list(request):

@@ -24,9 +24,10 @@
                     <li class="nav-item"><a class="nav-link" href="{% url 'ingrediente_list' %}">Ingredientes</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'categoria_list' %}">Categorías</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'stock_list' %}">Stock</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'simular_pedido' %}">Simular Pedido</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'mesa_list' %}">Mesas</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'reserva_list' %}">Reservas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'pedidos_mesero' %}">Pedidos</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'pedidos_cocina' %}">Cocina</a></li>
                 </ul>
                 <ul class="navbar-nav">
                     {% if user.is_authenticated %}

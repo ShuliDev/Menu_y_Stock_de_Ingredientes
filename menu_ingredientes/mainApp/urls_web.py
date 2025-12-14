@@ -2,6 +2,7 @@ from django.urls import path
 from django.contrib.auth import views as auth_views
 from django.views.generic import RedirectView
 from . import views
+from . import pedidos_views
 
 urlpatterns = [
     path('', RedirectView.as_view(url='/login/', permanent=False), name='index'),
@@ -26,8 +27,6 @@ urlpatterns = [
     path('ingrediente/<int:pk>/delete/', views.ingrediente_delete, name='ingrediente_delete'),
     path('stock/<int:pk>/edit/', views.stock_update, name='stock_update'),
 
-    path('simular/', views.simular_pedido, name='simular_pedido'),
-    
     # ==================== MÓDULO 2: RUTAS WEB ====================
     
     # Autenticación
@@ -57,4 +56,18 @@ urlpatterns = [
     path('reservar/', views.cliente_reservar, name='cliente_reservar'),
     path('mis-reservas/', views.cliente_mis_reservas, name='cliente_mis_reservas'),
     path('mis-reservas/<int:pk>/cancelar/', views.cliente_cancelar_reserva, name='cliente_cancelar_reserva'),
+    
+    # ==================== MÓDULO 3: PEDIDOS (ADMIN/MESERO) ====================
+    
+    # Pedidos - UI
+    path('pedidos/', pedidos_views.mesero, name='pedidos_mesero'),
+    path('pedidos/crear/', pedidos_views.crear_pedido, name='pedidos_crear'),
+    path('pedidos/confirmar/<uuid:pedido_id>/', pedidos_views.accion_confirmar, name='pedidos_confirmar'),
+    path('pedidos/cancelar/<uuid:pedido_id>/', pedidos_views.accion_cancelar, name='pedidos_cancelar'),
+    path('pedidos/entregar/<uuid:pedido_id>/', pedidos_views.accion_entregar, name='pedidos_entregar'),
+    path('pedidos/cerrar/<uuid:pedido_id>/', pedidos_views.accion_cerrar, name='pedidos_cerrar'),
+    path('cocina/', pedidos_views.cocina, name='pedidos_cocina'),
+    path('cocina/en-preparacion/<uuid:pedido_id>/', pedidos_views.cocina_en_preparacion, name='pedidos_cocina_en_preparacion'),
+    path('cocina/sin-ingredientes/<uuid:pedido_id>/', pedidos_views.cocina_sin_ingredientes, name='pedidos_cocina_sin_ingredientes'),
+    path('cocina/listo/<uuid:pedido_id>/', pedidos_views.cocina_listo, name='pedidos_cocina_listo'),
 ]
