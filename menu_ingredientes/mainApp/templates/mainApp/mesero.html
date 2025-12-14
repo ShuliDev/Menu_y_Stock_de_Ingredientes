@@ -12,7 +12,12 @@
                 <div class="row">
                     <div class="col-md-6">
                         <label class="form-label">Mesa</label>
-                        <input type="text" name="mesa" class="form-control" placeholder="Número de mesa">
+                        <select name="mesa" class="form-select" required>
+                            <option value="" selected disabled>Selecciona una mesa</option>
+                            {% for m in mesas %}
+                            <option value="{{ m.numero }}">Mesa {{ m.numero }} ({{ m.capacidad }} pax) - {{ m.estado }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Cliente (opcional)</label>
@@ -21,7 +26,12 @@
                 </div>
                 <div class="mt-3">
                     <label class="form-label">Plato</label>
-                    <input type="text" name="plato" class="form-control" placeholder="ID o nombre del plato">
+                    <select name="plato" class="form-select" required>
+                        <option value="" selected disabled>Selecciona un plato</option>
+                        {% for p in platos %}
+                        <option value="{{ p.id }}">{{ p.nombre }} - ${{ p.precio }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
                 <button type="submit" class="btn btn-primary mt-3">✅ Crear Pedido</button>
             </form>

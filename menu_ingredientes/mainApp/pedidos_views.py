@@ -5,7 +5,7 @@ from django.utils.timezone import localtime
 import datetime
 
 from pedidos.models import Pedido
-from .models import Plato
+from .models import Plato, Mesa
 
 
 ESTADOS_ACTIVOS = {"CREADO", "EN_PREPARACION", "LISTO", "ENTREGADO"}
@@ -49,7 +49,8 @@ def mesero(request):
     pedidos = Pedido.objects.all().order_by('-creado_en')
     pedidos_ui = [_enriquecer_pedido(p) for p in pedidos]
     platos = Plato.objects.filter(activo=True)
-    ctx = {'pedidos': pedidos_ui, 'platos': platos}
+    mesas = Mesa.objects.all().order_by('numero')
+    ctx = {'pedidos': pedidos_ui, 'platos': platos, 'mesas': mesas}
     return render(request, 'mainApp/mesero.html', ctx)
 
 
@@ -59,17 +60,27 @@ def crear_pedido(request):
     cliente = (request.POST.get('cliente') or '').strip()
     plato = (request.POST.get('plato') or '').strip()
     if not mesa or not cliente or not plato:
-        messages.warning(request, 'Debes ingresar mesa, cliente y seleccionar un plato.')
+        messages.warning(request, 'Debes seleccionar mesa, cliente y plato.')
+        return redirect('pedidos_mesero')
+
+    try:
+        mesa_num = int(mesa)
+    except ValueError:
+        messages.error(request, 'Selecciona una mesa válida.')
+        return redirect('pedidos_mesero')
+
+    if not Mesa.objects.filter(numero=mesa_num).exists():
+        messages.error(request, f'La mesa {mesa_num} no existe.')
         return redirect('pedidos_mesero')
 
     # validar mesa
     activos = Pedido.objects.exclude(estado__in=['CERRADO', 'CANCELADO'])
-    if activos.filter(mesa=mesa).exists():
-        messages.error(request, f'La mesa {mesa} ya tiene un pedido activo.')
+    if activos.filter(mesa=mesa_num).exists():
+        messages.error(request, f'La mesa {mesa_num} ya tiene un pedido activo.')
         return redirect('pedidos_mesero')
 
-    p = Pedido.objects.create(mesa=mesa, cliente=cliente, plato=plato)
-    messages.success(request, f'Pedido para mesa {mesa} creado.')
+    p = Pedido.objects.create(mesa=mesa_num, cliente=cliente, plato=plato)
+    messages.success(request, f'Pedido para mesa {mesa_num} creado.')
     return redirect('pedidos_mesero')
 
 
