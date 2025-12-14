@@ -1,3 +1,5 @@
+# mainApp/urls_api.py - VERSIÓN SIMPLE Y FUNCIONAL
+
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 from . import views_api
