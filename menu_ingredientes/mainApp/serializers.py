@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Perfil, Mesa, Reserva
+from .models import Perfil, Mesa, Reserva, CategoriaMenu, Ingrediente, Plato, Receta, Stock, ReservaStock
 from datetime import date, time
 import re
 
