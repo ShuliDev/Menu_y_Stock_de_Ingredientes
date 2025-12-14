@@ -26,7 +26,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-7k#p9m2@x8n!v4&w5q+z$r1c6b^3h*9j0e8d7s2a5f4g3h6k')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+DEBUG = True  # Activado temporalmente para debug
 
 ALLOWED_HOSTS = ['web-production-2d3fb.up.railway.app', '127.0.0.1', 'localhost']
 
@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'drf_yasg',
     'mainApp',
     'pedidos',
+    'cocina',  # Módulo 4 - Monitor de Cocina
 ]
 
 MIDDLEWARE = [

@@ -30,6 +30,7 @@ urlpatterns = [
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
     
     # ========== VISTAS WEB (interfaz tradicional) ==========
+    path('cocina/', include('cocina.urls')),  # Módulo 4 - Monitor de Cocina
     path('', include('mainApp.urls_web')),
 ]
 
