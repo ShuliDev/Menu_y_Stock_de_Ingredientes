@@ -9,5 +9,4 @@ urlpatterns = [
     path("cocina/estado/", cocina_estado, name="cocina-estado"),
     path("cocina/lista/", cocina_list, name="cocina-lista"),
 ]
-
 urlpatterns += router.urls
