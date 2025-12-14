@@ -1,9 +1,0 @@
-Django==5.0.6
-gunicorn
-pillow
-whitenoise
-djangorestframework
-dj-database-url
-drf-spectacular
-psycopg2-binary
-requests
