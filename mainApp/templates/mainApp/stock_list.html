@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Stock</h1>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Ingrediente</th>
+            <th>Cantidad disponible</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for s in stocks %}
+        <tr>
+            <td>{{ s.ingrediente.nombre }}</td>
+            <td>{{ s.cantidad_disponible }}</td>
+            <td>
+                <a class="btn btn-sm btn-primary" href="{% url 'stock_update' s.pk %}">Editar</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="3">No hay stock configurado.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

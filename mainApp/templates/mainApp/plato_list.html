@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Platos</h1>
+    <a class="btn btn-success" href="{% url 'plato_create' %}">Nuevo Plato</a>
+</div>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Categoria</th>
+            <th>Precio</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for plato in platos %}
+        <tr>
+            <td>{{ plato.nombre }}</td>
+            <td>{{ plato.categoria.nombre }}</td>
+            <td>{{ plato.precio }}</td>
+            <td class="table-actions">
+                <a class="btn btn-primary btn-sm" href="{% url 'plato_update' plato.pk %}">Editar</a>
+                <a class="btn btn-danger btn-sm" href="{% url 'plato_delete' plato.pk %}">Desactivar</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4">No hay platos.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
