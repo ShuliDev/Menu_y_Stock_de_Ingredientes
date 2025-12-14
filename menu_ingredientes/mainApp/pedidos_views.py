@@ -48,9 +48,33 @@ def _enriquecer_pedido(p):
 def mesero(request):
     pedidos = Pedido.objects.all().order_by('-creado_en')
     pedidos_ui = [_enriquecer_pedido(p) for p in pedidos]
+    
+    # Filtrar pedidos activos
+    pedidos_activos_obj = Pedido.objects.filter(estado__in=ESTADOS_ACTIVOS).order_by('-creado_en')
+    pedidos_activos_list = [_enriquecer_pedido(p) for p in pedidos_activos_obj]
+    
+    # Filtrar pedidos inactivos (CERRADO, CANCELADO)
+    pedidos_inactivos_obj = Pedido.objects.filter(
+        estado__in=['CERRADO', 'CANCELADO']
+    ).order_by('-actualizado_en')[:20]  # Últimos 20
+    pedidos_inactivos_list = [_enriquecer_pedido(p) for p in pedidos_inactivos_obj]
+    
+    # Agregar flag de modificación
+    for p in pedidos_activos_list:
+        p['puede_modificarse'] = p['estado'] == 'CREADO'
+    
     platos = Plato.objects.filter(activo=True)
     mesas = Mesa.objects.all().order_by('numero')
-    ctx = {'pedidos': pedidos_ui, 'platos': platos, 'mesas': mesas}
+    
+    ctx = {
+        'pedidos': pedidos_ui,
+        'pedidos_activos_list': pedidos_activos_list,
+        'pedidos_inactivos_list': pedidos_inactivos_list,
+        'pedidos_activos': len(pedidos_activos_list),
+        'total_pedidos': pedidos.count(),
+        'platos': platos,
+        'mesas': mesas
+    }
     return render(request, 'mainApp/mesero.html', ctx)
 
 
@@ -80,6 +104,22 @@ def crear_pedido(request):
         return redirect('pedidos_mesero')
 
     p = Pedido.objects.create(mesa=mesa_num, cliente=cliente, plato=plato)
+    
+    # Crear también en cocina (Módulo 4)
+    try:
+        from cocina.models import PedidoCocina
+        plato_obj = Plato.objects.filter(id=plato).first()
+        plato_nombre = plato_obj.nombre if plato_obj else f"Plato #{plato}"
+        PedidoCocina.objects.create(
+            id_modulo3=str(p.id),
+            mesa=mesa_num,
+            cliente=cliente,
+            descripcion=plato_nombre,
+            estado='CREADO'
+        )
+    except Exception as e:
+        pass  # No fallar si cocina no está disponible
+    
     messages.success(request, f'Pedido para mesa {mesa_num} creado.')
     return redirect('pedidos_mesero')
 
@@ -100,6 +140,17 @@ def accion_confirmar(request, pedido_id):
                 messages.error(request, f'No se pudo reservar stock: {e}')
                 return redirect('pedidos_mesero')
         p.confirmar()
+        
+        # Sincronizar con PedidoCocina
+        try:
+            from cocina.models import PedidoCocina
+            p_cocina = PedidoCocina.objects.filter(id_modulo3=str(pedido_id)).first()
+            if p_cocina:
+                p_cocina.estado = 'EN_PREPARACION'
+                p_cocina.save()
+        except Exception:
+            pass
+        
         messages.success(request, 'Pedido confirmado (EN_PREPARACION).')
     except Exception as e:
         messages.error(request, f'No se pudo confirmar: {e}')
@@ -110,6 +161,16 @@ def accion_cancelar(request, pedido_id):
     try:
         p = Pedido.objects.get(pk=pedido_id)
         p.cancelar()
+        
+        # Eliminar de PedidoCocina
+        try:
+            from cocina.models import PedidoCocina
+            p_cocina = PedidoCocina.objects.filter(id_modulo3=str(pedido_id)).first()
+            if p_cocina:
+                p_cocina.delete()
+        except Exception:
+            pass
+        
         messages.info(request, 'Pedido cancelado (stock liberado).')
     except Exception as e:
         messages.error(request, f'No se pudo cancelar: {e}')
@@ -120,6 +181,18 @@ def accion_entregar(request, pedido_id):
     try:
         p = Pedido.objects.get(pk=pedido_id)
         p.entregar()
+        
+        # Sincronizar con PedidoCocina
+        try:
+            from cocina.models import PedidoCocina
+            from django.utils import timezone
+            p_cocina = PedidoCocina.objects.filter(id_modulo3=str(pedido_id)).first()
+            if p_cocina:
+                p_cocina.estado = 'ENTREGADO'
+                p_cocina.save()
+        except Exception:
+            pass
+        
         messages.success(request, 'Pedido marcado como ENTREGADO.')
     except Exception as e:
         messages.error(request, f'No se pudo entregar: {e}')
@@ -137,37 +210,109 @@ def accion_cerrar(request, pedido_id):
 
 
 def cocina(request):
-    pedidos = Pedido.objects.exclude(estado__in=['CANCELADO', 'CERRADO']).order_by('creado_en')
-    pedidos_ui = [_enriquecer_pedido(p) for p in pedidos]
-    ctx = {'pedidos': pedidos_ui}
-    return render(request, 'mainApp/cocina.html', ctx)
+    """Redirigir al monitor de cocina (Módulo 4)"""
+    from django.shortcuts import redirect
+    return redirect('cocina_monitor')
 
 
 def cocina_en_preparacion(request, pedido_id):
+    """Cambiar pedido a EN_PREPARACION en módulo 4"""
     try:
-        p = Pedido.objects.get(pk=pedido_id)
-        p.confirmar()
-        messages.success(request, 'Pedido EN_PREPARACION.')
+        from cocina.models import PedidoCocina
+        # Buscar en módulo 4 por id_modulo3
+        p_cocina = PedidoCocina.objects.filter(id_modulo3=str(pedido_id)).first()
+        if p_cocina and p_cocina.estado in ['CREADO', 'URGENTE']:
+            p_cocina.estado = 'EN_PREPARACION'
+            p_cocina.save()
+            
+            # Sincronizar con módulo 3
+            try:
+                p = Pedido.objects.get(pk=pedido_id)
+                if p.estado == 'CREADO':
+                    p.estado = 'EN_PREPARACION'
+                    p.save()
+            except Exception:
+                pass
+            
+            messages.success(request, 'Pedido EN_PREPARACION.')
+        else:
+            messages.warning(request, 'El pedido no se puede preparar.')
     except Exception as e:
         messages.error(request, f'No se pudo cambiar estado: {e}')
-    return redirect('pedidos_cocina')
+    return redirect('cocina_monitor')
 
 
 def cocina_sin_ingredientes(request, pedido_id):
+    """Cancelar pedido por falta de ingredientes"""
     try:
+        from cocina.models import PedidoCocina
+        # Cancelar en módulo 4
+        p_cocina = PedidoCocina.objects.filter(id_modulo3=str(pedido_id)).first()
+        if p_cocina:
+            p_cocina.delete()
+        # Cancelar en módulo 3
         p = Pedido.objects.get(pk=pedido_id)
         p.cancelar()
         messages.info(request, 'Cocina: sin ingredientes, pedido CANCELADO.')
     except Exception as e:
         messages.error(request, f'Error: {e}')
-    return redirect('pedidos_cocina')
+    return redirect('cocina_monitor')
 
 
 def cocina_listo(request, pedido_id):
+    """Marcar pedido como LISTO"""
     try:
-        p = Pedido.objects.get(pk=pedido_id)
-        p.marcar_listo()
-        messages.success(request, 'Cocina: pedido LISTO para entregar.')
+        from cocina.models import PedidoCocina
+        from django.utils import timezone
+        # Actualizar en módulo 4
+        p_cocina = PedidoCocina.objects.filter(id_modulo3=str(pedido_id)).first()
+        if p_cocina and p_cocina.estado == 'EN_PREPARACION':
+            p_cocina.estado = 'LISTO'
+            p_cocina.hora_listo = timezone.now()
+            p_cocina.save()
+            
+            # Sincronizar con módulo 3
+            try:
+                p = Pedido.objects.get(pk=pedido_id)
+                p.estado = 'LISTO'
+                p.save()
+            except Exception:
+                pass
+            
+            messages.success(request, 'Cocina: pedido LISTO para entregar.')
+        else:
+            messages.warning(request, 'El pedido no está en preparación.')
     except Exception as e:
         messages.error(request, f'Error: {e}')
-    return redirect('pedidos_cocina')
+    return redirect('cocina_monitor')
+
+
+def cocina_entregar(request, pedido_id):
+    """Entregar pedido al cliente"""
+    try:
+        from cocina.models import PedidoCocina
+        from django.utils import timezone
+        # Actualizar en módulo 4
+        p_cocina = PedidoCocina.objects.filter(id_modulo3=str(pedido_id)).first()
+        if p_cocina and p_cocina.estado == 'LISTO':
+            p_cocina.estado = 'ENTREGADO'
+            p_cocina.save()
+            
+            # Sincronizar con módulo 3
+            try:
+                p = Pedido.objects.get(pk=pedido_id)
+                p.estado = 'ENTREGADO'
+                p.entregado_en = timezone.now()
+                p.save()
+            except Exception:
+                pass
+            
+            # Eliminar de cocina después de entregar
+            p_cocina.delete()
+            
+            messages.success(request, 'Pedido ENTREGADO. Puede cerrarse desde la vista de pedidos.')
+        else:
+            messages.warning(request, 'El pedido no está listo.')
+    except Exception as e:
+        messages.error(request, f'Error: {e}')
+    return redirect('cocina_monitor')

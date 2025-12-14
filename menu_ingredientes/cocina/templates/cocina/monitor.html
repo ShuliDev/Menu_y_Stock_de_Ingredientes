@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <h1>👨‍🍳 Cocina - Monitor de Pedidos</h1>
+    
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-white bg-danger">
+                <div class="card-body">
+                    <h5 class="card-title">Pedidos por Preparar</h5>
+                    <h2>{{ pedidos_pendientes|length }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h5 class="card-title">En Preparación</h5>
+                    <h2>{{ pedidos_en_preparacion|length }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">Listos para Entregar</h5>
+                    <h2>{{ pedidos_listos|length }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Pedidos por preparar -->
+        <div class="col-md-6 mb-4">
+            <h3>⏳ Pedidos Nuevos</h3>
+            <div class="pedidos-container">
+                {% for pedido in pedidos_pendientes %}
+                <div class="card border-danger mb-3">
+                    <div class="card-header bg-danger text-white">
+                        <strong>Mesa {{ pedido.mesa|default:"N/A" }}</strong>
+                        <span class="float-end text-sm">{{ pedido.creado_str }}</span>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">{{ pedido.plato_nombre }}</h5>
+                        <p class="card-text">
+                            <strong>Cantidad:</strong> {{ pedido.cantidad|default:"1" }}<br>
+                            <strong>Cliente:</strong> {{ pedido.cliente|default:"-" }}<br>
+                            <strong>ID:</strong> <code>{{ pedido.id|truncatechars:8 }}</code>
+                        </p>
+                        <a href="{% url 'pedidos_cocina_en_preparacion' pedido.id %}" class="btn btn-warning btn-sm">👨‍🍳 Preparar</a>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="alert alert-info">✅ No hay pedidos pendientes</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Pedidos en preparación -->
+        <div class="col-md-6 mb-4">
+            <h3>👨‍🔧 En Preparación</h3>
+            <div class="pedidos-container">
+                {% for pedido in pedidos_en_preparacion %}
+                <div class="card border-info mb-3">
+                    <div class="card-header bg-info text-white">
+                        <strong>Mesa {{ pedido.mesa|default:"N/A" }}</strong>
+                        <span class="float-end text-sm">{{ pedido.tiempo_preparacion }}</span>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">{{ pedido.plato_nombre }}</h5>
+                        <p class="card-text">
+                            <strong>Cantidad:</strong> {{ pedido.cantidad|default:"1" }}<br>
+                            <strong>Cliente:</strong> {{ pedido.cliente|default:"-" }}<br>
+                            <strong>ID:</strong> <code>{{ pedido.id|truncatechars:8 }}</code>
+                        </p>
+                        <div class="btn-group" role="group">
+                            <a href="{% url 'pedidos_cocina_listo' pedido.id %}" class="btn btn-success btn-sm">✅ Listo</a>
+                            <a href="{% url 'pedidos_cocina_sin_ingredientes' pedido.id %}" class="btn btn-danger btn-sm">❌ Sin ingredientes</a>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="alert alert-info">Sin pedidos en preparación</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <h3>✅ Listos para Entregar</h3>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead class="table-success">
+                        <tr>
+                            <th>Mesa</th>
+                            <th>Plato</th>
+                            <th>Cliente</th>
+                            <th>Creado</th>
+                            <th>ID</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pedido in pedidos_listos %}
+                        <tr class="table-light">
+                            <td><strong>{{ pedido.mesa|default:"-" }}</strong></td>
+                            <td>{{ pedido.plato_nombre }}</td>
+                            <td>{{ pedido.cliente|default:"-" }}</td>
+                            <td>{{ pedido.creado_str }}</td>
+                            <td>
+                                <small><code>{{ pedido.id|truncatechars:8 }}</code></small>
+                            </td>
+                            <td>
+                                <a href="{% url 'pedidos_cocina_entregar' pedido.id %}" class="btn btn-primary btn-sm">🚀 Entregar</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">No hay pedidos listos</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .pedidos-container {
+        max-height: 600px;
+        overflow-y: auto;
+    }
+    
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .text-sm {
+        font-size: 0.85rem;
+    }
+</style>
+{% endblock %}

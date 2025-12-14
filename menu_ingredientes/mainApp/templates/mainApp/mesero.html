@@ -20,7 +20,7 @@
                         </select>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Cliente (opcional)</label>
+                        <label class="form-label">Cliente</label>
                         <input type="text" name="cliente" class="form-control" placeholder="Nombre del cliente">
                     </div>
                 </div>
@@ -76,19 +76,56 @@
                     </td>
                     <td>{{ pedido.creado_str }}</td>
                     <td>
-                        {% if pedido.puede_modificarse %}
-                        <a href="{% url 'pedidos_confirmar' pedido.id %}" class="btn btn-sm btn-success">Confirmar</a>
-                        <a href="{% url 'pedidos_cancelar' pedido.id %}" class="btn btn-sm btn-danger">Cancelar</a>
-                        {% elif pedido.estado == 'LISTO' %}
-                        <a href="{% url 'pedidos_entregar' pedido.id %}" class="btn btn-sm btn-primary">Entregar</a>
-                        {% elif pedido.estado == 'ENTREGADO' %}
-                        <a href="{% url 'pedidos_cerrar' pedido.id %}" class="btn btn-sm btn-secondary">Cerrar</a>
+                        {% if pedido.estado == 'ENTREGADO' %}
+                        <a href="{% url 'pedidos_cerrar' pedido.id %}" class="btn btn-sm btn-secondary">🔒 Cerrar</a>
+                        {% else %}
+                        <span class="text-muted">Gestionado desde Cocina</span>
                         {% endif %}
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
                     <td colspan="7" class="text-center text-muted">No hay pedidos activos</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <hr class="my-5">
+
+    <h3>Pedidos Inactivos (Últimos 20)</h3>
+    <div class="table-responsive">
+        <table class="table table-sm">
+            <thead class="table-secondary">
+                <tr>
+                    <th>ID</th>
+                    <th>Mesa</th>
+                    <th>Cliente</th>
+                    <th>Plato</th>
+                    <th>Estado</th>
+                    <th>Creado</th>
+                    <th>Actualizado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pedido in pedidos_inactivos_list %}
+                <tr>
+                    <td><code>{{ pedido.id|truncatechars:8 }}</code></td>
+                    <td>{{ pedido.mesa|default:"-" }}</td>
+                    <td>{{ pedido.cliente|default:"-" }}</td>
+                    <td>{{ pedido.plato_nombre }}</td>
+                    <td>
+                        <span class="badge bg-{% if pedido.estado == 'CERRADO' %}dark{% else %}secondary{% endif %}">
+                            {{ pedido.estado }}
+                        </span>
+                    </td>
+                    <td>{{ pedido.creado_str }}</td>
+                    <td>{{ pedido.actu_str }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted">No hay pedidos inactivos</td>
                 </tr>
                 {% endfor %}
             </tbody>

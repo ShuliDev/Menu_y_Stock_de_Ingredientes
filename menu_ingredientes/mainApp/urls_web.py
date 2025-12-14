@@ -70,4 +70,5 @@ urlpatterns = [
     path('cocina/en-preparacion/<uuid:pedido_id>/', pedidos_views.cocina_en_preparacion, name='pedidos_cocina_en_preparacion'),
     path('cocina/sin-ingredientes/<uuid:pedido_id>/', pedidos_views.cocina_sin_ingredientes, name='pedidos_cocina_sin_ingredientes'),
     path('cocina/listo/<uuid:pedido_id>/', pedidos_views.cocina_listo, name='pedidos_cocina_listo'),
+    path('cocina/entregar/<uuid:pedido_id>/', pedidos_views.cocina_entregar, name='pedidos_cocina_entregar'),
 ]
