@@ -7,6 +7,7 @@ from . import views_api
 router = DefaultRouter()
 
 # Registro de ViewSets en el router
+# Registrar ViewSets existentes
 router.register(r'categorias', views_api.CategoriaMenuViewSet)
 router.register(r'ingredientes', views_api.IngredienteViewSet)
 router.register(r'platos', views_api.PlatoViewSet)
