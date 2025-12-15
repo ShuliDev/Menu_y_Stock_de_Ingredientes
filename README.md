@@ -93,6 +93,23 @@ Funcionalidades:
 ### Documentación Interactiva
 
 **Base URL:** https://web-production-2d3fb.up.railway.app/api/
+1. APIs Básicas (CRUD)
+
+GET    /api/categorias/     - Listar categorías
+GET    /api/ingredientes/   - Listar ingredientes  
+GET    /api/platos/         - Listar platos
+2. APIs de Integración (Combinan Módulos)
+
+GET    /api/estado-integrado/           - Estado general de los 4 módulos
+POST   /api/crear-pedido-integrado/     - Crea pedido con verificación de stock
+GET    /api/dashboard-restaurante/      - Dashboard completo del restaurante
+GET    /api/verificar-disponibilidad/   - Verifica mesa + ingredientes
+3. URLs para Probar:
+
+https://web-production-2d3fb.up.railway.app/api/estado-integrado/
+https://web-production-2d3fb.up.railway.app/api/dashboard-restaurante/
+https://web-production-2d3fb.up.railway.app/api/platos/
+https://web-production-2d3fb.up.railway.app/api/verificar-disponibilidad/
 
 #### Swagger UI (Recomendado)
 **URL:** https://web-production-2d3fb.up.railway.app/swagger/
